@@ -9,12 +9,12 @@ args_t args;
 args_t getArgs(int argc, char* argv[]) {
     args_t a;
 
-    a.cars_per_day = 900;
-    a.buses_per_day = 20;
-    a.people_per_day = 500;
-    a.tbar_power = 65;
-    a.chairlift_power = 65;
-    a.parking_lot_capacity = 500;
+    a.cars_per_day = 200;
+    a.buses_per_day = 4;
+    a.people_per_day = 50;
+    a.tbar_power = 75;
+    a.chairlift_power = 85;
+    a.parking_lot_capacity = 300;
 
     if (argc >= 2) {
         for (int i = 1; i < argc; i++) {
@@ -72,7 +72,9 @@ int main(int argc, char* argv[]) {
     chairliftQueue.Output();
     tbarQueue.Output();
     ParkingLot.Output();
-    printf("Average runs per skier: %d\n", totalRuns / totalSkiers);
-
+    float average = (float)totalRuns / (float)totalSkiers;
+    printf("Total number of skiers: %d\n", totalSkiers);
+    printf("Average runs per skier: %f\n", average);
+    printf("Skier with most runs: %d\n", maxRuns);
     return 0;
 }

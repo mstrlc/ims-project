@@ -54,6 +54,7 @@ Queue tbarQueue;
 Queue readyToLeave;
 
 int totalRuns = 0;
+int maxRuns = 0;
 int totalSkiers = 0;
 
 class Skier : public Process {
@@ -66,12 +67,12 @@ class Skier : public Process {
     int getSkipassTime() {
         int res = Random() * 100;
         if (res < 15) {
-            return 2;
+            return 2*HR;
         }
         if (res < 50) {
-            return 4;
+            return 4*HR;
         } else {
-            return 8;
+            return 8*HR;
         }
     }
 
@@ -84,6 +85,9 @@ class Skier : public Process {
     int SelectLift() {
         int res = Random() * 100;
         int chosen;
+        int tbar_queue = tbarQueue.Length();
+        int chairlift_queue = chairliftQueue.Length();
+
         if (res < 80) {  // Chair
             chosen = LIFT_CHAIRLIFT;
         } else {  // Tbar
@@ -97,7 +101,7 @@ class Skier : public Process {
         if (res < 50)  // Red 1200m
         {
             return SLOPE_RED;
-        } else if (res < 80)  // Blue 1500m
+        } else if (res < 85)  // Blue 1500m
         {
             return SLOPE_BLUE;
         } else  // Black 1000m
@@ -108,8 +112,8 @@ class Skier : public Process {
 
     void Behavior() {
         totalSkiers++;
-        Wait(Normal(10 * MIN, 2.5 * MIN));           // Get ready
         this->finishTime = Time + getSkipassTime();  // Get time of skipass finish
+        Wait(Normal(10 * MIN, 2.5 * MIN));           // Get ready
     start:
         // Downhill station
         if (Time <= OPEN) {
@@ -123,11 +127,10 @@ class Skier : public Process {
                 if (Random() * 100 < 10) {
                     if (Time >= 11 * HR && Time <= 13 * HR) {  // Lunchtime
                         Wait(Normal(45 * MIN, 10 * MIN));
-                        hadRefreshment = true;
                     } else {  // Only quick snack
                         Wait(Normal(15 * MIN, 3 * MIN));
-                        hadRefreshment = true;
                     }
+                    hadRefreshment = true;
                 }
             }
             int lift = SelectLift();  // Decide which lift
@@ -147,14 +150,17 @@ class Skier : public Process {
             // Uphill station
             int slope = SelectSlope();  // Decide which slope
             if (slope == SLOPE_RED) {   // Red
-                Wait(Normal(5.3 * MIN, 30 * SEC));
+                Wait(Normal(7.3 * MIN, 30 * SEC));
             } else if (slope == SLOPE_BLUE) {  // Blue
-                Wait(Normal(6.5 * MIN, 60 * SEC));
+                Wait(Normal(8.5 * MIN, 60 * SEC));
             } else {  // Black
-                Wait(Normal(4.1 * MIN, 40 * SEC));
+                Wait(Normal(6.1 * MIN, 40 * SEC));
             }
             this->uphill = false;
-            numOfRuns++;
+            this->numOfRuns++;
+            if(this->numOfRuns >= maxRuns) {
+                maxRuns = this->numOfRuns;
+            }
             goto start;
         }
     leave:
@@ -185,7 +191,7 @@ class Tbar : public Process {
 
     void Behavior() {
     start:
-        int actual_per_hour = ((TBAR_MAX_CAPACITY_PER_HOUR / 2) * args.tbar_power / 100 * 0.8);
+        int actual_per_hour = ((TBAR_MAX_CAPACITY_PER_HOUR / 2) * args.tbar_power / 100);
         double actual_per_second = actual_per_hour / (HR);
         int interval = (1 / actual_per_second);
         if (Time >= CLOSE) {
@@ -231,7 +237,7 @@ class Chairlift : public Process {
 
     void Behavior() {
     start:
-        int actual_per_hour = ((CHAIRLIFT_MAX_CAPACITY_PER_HOUR / 6) * args.chairlift_power / 100 * 0.8);
+        int actual_per_hour = ((CHAIRLIFT_MAX_CAPACITY_PER_HOUR / 6) * args.chairlift_power / 100);
         double actual_per_second = actual_per_hour / (HR);
         int interval = (1 / actual_per_second);
         if (Time >= CLOSE) {
@@ -296,7 +302,7 @@ class Car : public Process {
             (new SkierGenerator())->Activate();
         }
     wait:
-        Wait(2 * HR);
+        Wait(1 * HR);
         // Wait until skiers are done skiing
         if (readyToLeave.Length() >= this->numberOfPeople) {
             for (unsigned int i = 0; i < this->numberOfPeople; i++) {
