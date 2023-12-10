@@ -6,6 +6,38 @@ using namespace std;
 
 args_t args;
 
+args_t getArgs(int argc, char* argv[]) {
+    args_t a;
+
+    a.cars_per_day = 600;
+    a.buses_per_day = 10;
+    a.people_per_day = 500;
+    a.tbar_power = 65;
+    a.chairlift_power = 70;
+    a.parking_lot_capacity = 400;
+
+    if (argc >= 2) {
+        for (int i = 1; i < argc; i++) {
+            string opt = string(argv[i]);
+            if (opt == "--cars") {
+                a.cars_per_day = atoi(argv[i + 1]);
+            } else if (opt == "--buses") {
+                a.buses_per_day = atoi(argv[i + 1]);
+            } else if (opt == "--people") {
+                a.people_per_day = atoi(argv[i + 1]);
+            } else if (opt == "--tbarpow") {
+                a.tbar_power = atoi(argv[i + 1]);
+            } else if (opt == "--chairpow") {
+                a.chairlift_power = atoi(argv[i + 1]);
+            } else if (opt == "--parking") {
+                args.parking_lot_capacity = atoi(argv[i + 1]);
+            }
+        }
+    }
+
+    return a;
+}
+
 int main(int argc, char* argv[]) {
     args = getArgs(argc, argv);
 
@@ -14,6 +46,8 @@ int main(int argc, char* argv[]) {
 
     chairliftQueue.SetName("Lanovka sestisedackova 6 osob");
     tbarQueue.SetName("Lanovka kotva 2 osoby");
+
+    ParkingLot.SetCapacity(args.parking_lot_capacity);
 
     for (int i = 0; i < args.cars_per_day; i++) {
         (new CarGenerator())->Activate();
@@ -38,7 +72,7 @@ int main(int argc, char* argv[]) {
     chairliftQueue.Output();
     tbarQueue.Output();
     ParkingLot.Output();
-    printf("Average runs per skier: %d\n", totalRuns/totalSkiers);
+    printf("Average runs per skier: %d\n", totalRuns / totalSkiers);
 
     return 0;
 }

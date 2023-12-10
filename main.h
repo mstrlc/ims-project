@@ -40,40 +40,13 @@ struct args_t {
     int buses_per_day;
     int people_per_day;
 
+    int parking_lot_capacity;
+
     int tbar_power;
     int chairlift_power;
 };
 
 extern args_t args;
-
-args_t getArgs(int argc, char *argv[]) {
-    args_t a;
-
-    a.cars_per_day = 600;
-    a.buses_per_day = 10;
-    a.people_per_day = 500;
-    a.tbar_power = 65;
-    a.chairlift_power = 70;
-
-    if (argc >= 2) {
-        for (int i = 1; i < argc; i++) {
-            string opt = string(argv[i]);
-            if (opt == "--cars") {
-                a.cars_per_day = atoi(argv[i + 1]);
-            } else if (opt == "--buses") {
-                a.buses_per_day = atoi(argv[i + 1]);
-            } else if (opt == "--people") {
-                a.people_per_day = atoi(argv[i + 1]);
-            } else if (opt == "--tbarpow") {
-                a.tbar_power = atoi(argv[i + 1]);
-            } else if (opt == "--chairpow") {
-                a.chairlift_power = atoi(argv[i + 1]);
-            }
-        }
-    }
-
-    return a;
-}
 
 Queue chairliftQueue;
 Queue tbarQueue;
@@ -284,9 +257,7 @@ class Chairlift : public Process {
 
 // Arrival logic
 
-#define PARKING_CAR_CAPACITY 300  // cars
-
-Store ParkingLot("Parkoviste", PARKING_CAR_CAPACITY);
+Store ParkingLot("Parkoviste", args.parking_lot_capacity);
 
 int carsCouldntPark = 0;
 
