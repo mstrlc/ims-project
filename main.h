@@ -38,6 +38,7 @@ using namespace std;
 struct args_t {
     int cars_per_day;
     int buses_per_day;
+    int people_per_day;
 
     int tbar_power;
     int chairlift_power;
@@ -50,8 +51,9 @@ args_t getArgs(int argc, char *argv[]) {
 
     a.cars_per_day = 600;
     a.buses_per_day = 10;
-    a.tbar_power = 70;
-    a.chairlift_power = 75;
+    a.people_per_day = 500;
+    a.tbar_power = 65;
+    a.chairlift_power = 70;
 
     if (argc >= 2) {
         for (int i = 1; i < argc; i++) {
@@ -60,6 +62,8 @@ args_t getArgs(int argc, char *argv[]) {
                 a.cars_per_day = atoi(argv[i + 1]);
             } else if (opt == "--buses") {
                 a.buses_per_day = atoi(argv[i + 1]);
+            } else if (opt == "--people") {
+                a.people_per_day = atoi(argv[i + 1]);
             } else if (opt == "--tbarpow") {
                 a.tbar_power = atoi(argv[i + 1]);
             } else if (opt == "--chairpow") {
@@ -75,6 +79,9 @@ Queue chairliftQueue;
 Queue tbarQueue;
 
 Queue readyToLeave;
+
+int totalRuns = 0;
+int totalSkiers = 0;
 
 class Skier : public Process {
    public:
@@ -127,6 +134,7 @@ class Skier : public Process {
     }
 
     void Behavior() {
+        totalSkiers++;
         Wait(Normal(10 * MIN, 2.5 * MIN));           // Get ready
         this->finishTime = Time + getSkipassTime();  // Get time of skipass finish
     start:
@@ -177,6 +185,7 @@ class Skier : public Process {
             goto start;
         }
     leave:
+        totalRuns += numOfRuns;
         Into(readyToLeave);
         Passivate();
     };
@@ -203,7 +212,7 @@ class Tbar : public Process {
 
     void Behavior() {
     start:
-        int actual_per_hour = ((TBAR_MAX_CAPACITY_PER_HOUR/2)*args.tbar_power/100);
+        int actual_per_hour = ((TBAR_MAX_CAPACITY_PER_HOUR / 2) * args.tbar_power / 100);
         double actual_per_second = actual_per_hour / (HR);
         int interval = 1 / actual_per_second;
         if (Time >= CLOSE) {
@@ -249,7 +258,7 @@ class Chairlift : public Process {
 
     void Behavior() {
     start:
-        int actual_per_hour = ((CHAIRLIFT_MAX_CAPACITY_PER_HOUR/6)*args.chairlift_power/100);
+        int actual_per_hour = ((CHAIRLIFT_MAX_CAPACITY_PER_HOUR / 6) * args.chairlift_power / 100);
         double actual_per_second = actual_per_hour / (HR);
         int interval = 1 / actual_per_second;
         if (Time >= CLOSE) {
@@ -358,6 +367,22 @@ class Bus : public Process {
     }
 };
 
+class Pedestrian : public Process {
+    void Behavior() {
+        Wait(Uniform(1, 8));  // People arrive between 7:00 and 14:00
+        (new SkierGenerator())->Activate();
+    wait:
+        Wait(2 * HR);
+        // Wait until skiers are done skiing
+        if (!readyToLeave.Empty()) {
+            Skier *skier = (Skier *)readyToLeave.GetFirst();
+            skier->Terminate();
+        } else {
+            goto wait;
+        }
+    }
+};
+
 class CarGenerator : public Event {
     void Behavior() {
         Car *car = new Car;
@@ -369,5 +394,12 @@ class BusGenerator : public Event {
     void Behavior() {
         Bus *bus = new Bus;
         bus->Activate();
+    }
+};
+
+class PedestrianGenerator : public Event {
+    void Behavior() {
+        Pedestrian *pedestrian = new Pedestrian;
+        pedestrian->Activate();
     }
 };

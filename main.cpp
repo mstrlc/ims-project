@@ -23,6 +23,10 @@ int main(int argc, char* argv[]) {
         (new BusGenerator())->Activate();
     }
 
+    for (int i = 0; i < args.people_per_day; i++) {
+        (new PedestrianGenerator())->Activate();
+    }
+
     Chairlift* chairlift = new Chairlift();
     Tbar* tbar = new Tbar();
 
@@ -34,6 +38,7 @@ int main(int argc, char* argv[]) {
     chairliftQueue.Output();
     tbarQueue.Output();
     ParkingLot.Output();
+    printf("Average runs per skier: %d\n", totalRuns/totalSkiers);
 
     return 0;
 }
