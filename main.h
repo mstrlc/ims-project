@@ -81,7 +81,7 @@ class Skier : public Process {
     }
 
     void GoUpLift(int duration) {
-        totalTimeOnLift += duration;
+        totalTimeOnLift += float(duration);
         Wait(duration);
         this->uphill = true;
         this->Activate();
@@ -143,7 +143,6 @@ class Skier : public Process {
             } else {
                 Into(chairliftQueue);
             }
-
             Passivate();  // Waiting in the queue
             queueTime = Time - queueTime;
             totalTimeInQueue += queueTime;

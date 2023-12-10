@@ -72,6 +72,6 @@ int main(int argc, char* argv[]) {
     printf("Average waiting in queue per skier: %f hr\n", ((float)totalTimeInQueue / (float)totalSkiers) / (HR));
     printf("Average going up lift per skier: %f hr\n", (float)totalTimeOnLift / (float)totalSkiers / (HR));
     printf("Average going downhill per skier: %f hr\n", (float)totalSkiingTime / (float)totalSkiers / (HR));
-    printf("Ratio of skiing to waiting (>1 == skiing > waiting): %f\n", (float)totalSkiingTime / (float)totalTimeInQueue);
+    printf("Ratio of skiing to waiting (>1 == skiing > waiting): %f\n", (float)totalSkiingTime / (((float)totalTimeInQueue)+(float)totalTimeOnLift));
     return 0;
 }

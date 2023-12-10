@@ -78,4 +78,5 @@ print("Average waiting in queue per skier:  {:.2f}".format(avg_waiting_queue_per
 print("Average going up lift per skier:     {:.2f}".format(avg_going_up_per_skier / runs))
 print("Average going downhill per skier:    {:.2f}".format(avg_going_down_per_skier / runs))
 print("Ratio of skiing to waiting:          {:.2f}".format(ratio_ski_wait / runs))
+print("Ratio of skiing to waiting:          1:{:.2f}".format(1 / (ratio_ski_wait / runs)))
 
