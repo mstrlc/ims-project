@@ -9,12 +9,12 @@ args_t args;
 args_t getArgs(int argc, char* argv[]) {
     args_t a;
 
-    a.cars_per_day = 600;
-    a.buses_per_day = 10;
+    a.cars_per_day = 900;
+    a.buses_per_day = 20;
     a.people_per_day = 500;
     a.tbar_power = 65;
-    a.chairlift_power = 70;
-    a.parking_lot_capacity = 400;
+    a.chairlift_power = 65;
+    a.parking_lot_capacity = 500;
 
     if (argc >= 2) {
         for (int i = 1; i < argc; i++) {

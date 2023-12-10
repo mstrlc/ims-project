@@ -84,7 +84,7 @@ class Skier : public Process {
     int SelectLift() {
         int res = Random() * 100;
         int chosen;
-        if (res < 85) {  // Chair
+        if (res < 80) {  // Chair
             chosen = LIFT_CHAIRLIFT;
         } else {  // Tbar
             chosen = LIFT_TBAR;
@@ -185,9 +185,9 @@ class Tbar : public Process {
 
     void Behavior() {
     start:
-        int actual_per_hour = ((TBAR_MAX_CAPACITY_PER_HOUR / 2) * args.tbar_power / 100);
+        int actual_per_hour = ((TBAR_MAX_CAPACITY_PER_HOUR / 2) * args.tbar_power / 100 * 0.8);
         double actual_per_second = actual_per_hour / (HR);
-        int interval = 1 / actual_per_second;
+        int interval = (1 / actual_per_second);
         if (Time >= CLOSE) {
             goto stop;
         }
@@ -231,9 +231,9 @@ class Chairlift : public Process {
 
     void Behavior() {
     start:
-        int actual_per_hour = ((CHAIRLIFT_MAX_CAPACITY_PER_HOUR / 6) * args.chairlift_power / 100);
+        int actual_per_hour = ((CHAIRLIFT_MAX_CAPACITY_PER_HOUR / 6) * args.chairlift_power / 100 * 0.8);
         double actual_per_second = actual_per_hour / (HR);
-        int interval = 1 / actual_per_second;
+        int interval = (1 / actual_per_second);
         if (Time >= CLOSE) {
             goto stop;
         }
