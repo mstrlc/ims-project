@@ -57,6 +57,10 @@ int totalRuns = 0;
 int maxRuns = 0;
 int totalSkiers = 0;
 
+float totalTimeOnLift = 0;
+float totalSkiingTime = 0;
+float totalTimeInQueue = 0;
+
 class Skier : public Process {
    public:
     bool hadRefreshment = false;
@@ -77,6 +81,7 @@ class Skier : public Process {
     }
 
     void GoUpLift(int duration) {
+        totalTimeOnLift += duration;
         Wait(duration);
         this->uphill = true;
         this->Activate();
@@ -85,9 +90,6 @@ class Skier : public Process {
     int SelectLift() {
         int res = Random() * 100;
         int chosen;
-        int tbar_queue = tbarQueue.Length();
-        int chairlift_queue = chairliftQueue.Length();
-
         if (res < 80) {  // Chair
             chosen = LIFT_CHAIRLIFT;
         } else {  // Tbar
@@ -135,6 +137,7 @@ class Skier : public Process {
             }
             int lift = SelectLift();  // Decide which lift
             Wait(Normal(2*MIN, 15*SEC));// Get to the queue
+            double queueTime = Time;
             if (lift == LIFT_TBAR) {
                 Into(tbarQueue);
             } else {
@@ -142,6 +145,8 @@ class Skier : public Process {
             }
 
             Passivate();  // Waiting in the queue
+            queueTime = Time - queueTime;
+            totalTimeInQueue += queueTime;
 
             if (!uphill) {  // Got kicked out of the queue
                 goto leave;
@@ -149,13 +154,16 @@ class Skier : public Process {
 
             // Uphill station
             int slope = SelectSlope();  // Decide which slope
+            double skiingTime = 0;
             if (slope == SLOPE_RED) {   // Red
-                Wait(Normal(7.3 * MIN, 30 * SEC));
+                skiingTime = (Normal(7.3 * MIN, 30 * SEC));
             } else if (slope == SLOPE_BLUE) {  // Blue
-                Wait(Normal(8.5 * MIN, 60 * SEC));
+                skiingTime = (Normal(8.5 * MIN, 60 * SEC));
             } else {  // Black
-                Wait(Normal(6.1 * MIN, 40 * SEC));
+                skiingTime = (Normal(6.1 * MIN, 40 * SEC));
             }
+            Wait(skiingTime);
+            totalSkiingTime += skiingTime;
             this->uphill = false;
             this->numOfRuns++;
             if(this->numOfRuns >= maxRuns) {
@@ -325,7 +333,7 @@ class Bus : public Process {
     }
 
     void Behavior() {
-        Wait(Uniform(1, 8));  // Buses arrive between 7:00 and 14:00
+        Wait(Uniform(1 * HR, 8 * HR));  // Buses arrive between 7:00 and 14:00
         this->numberOfPeople = getNumberOfPeople();
         for (unsigned int i = 0; i < this->numberOfPeople; i++) {
             (new SkierGenerator())->Activate();
@@ -344,22 +352,6 @@ class Bus : public Process {
     }
 };
 
-class Pedestrian : public Process {
-    void Behavior() {
-        Wait(Uniform(1, 8));  // People arrive between 7:00 and 14:00
-        (new SkierGenerator())->Activate();
-    wait:
-        Wait(2 * HR);
-        // Wait until skiers are done skiing
-        if (!readyToLeave.Empty()) {
-            Skier *skier = (Skier *)readyToLeave.GetFirst();
-            skier->Terminate();
-        } else {
-            goto wait;
-        }
-    }
-};
-
 class CarGenerator : public Event {
     void Behavior() {
         Car *car = new Car;
@@ -371,12 +363,5 @@ class BusGenerator : public Event {
     void Behavior() {
         Bus *bus = new Bus;
         bus->Activate();
-    }
-};
-
-class PedestrianGenerator : public Event {
-    void Behavior() {
-        Pedestrian *pedestrian = new Pedestrian;
-        pedestrian->Activate();
     }
 };

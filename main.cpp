@@ -11,7 +11,6 @@ args_t getArgs(int argc, char* argv[]) {
 
     a.cars_per_day = 200;
     a.buses_per_day = 4;
-    a.people_per_day = 50;
     a.tbar_power = 75;
     a.chairlift_power = 85;
     a.parking_lot_capacity = 300;
@@ -23,14 +22,12 @@ args_t getArgs(int argc, char* argv[]) {
                 a.cars_per_day = atoi(argv[i + 1]);
             } else if (opt == "--buses") {
                 a.buses_per_day = atoi(argv[i + 1]);
-            } else if (opt == "--people") {
-                a.people_per_day = atoi(argv[i + 1]);
             } else if (opt == "--tbarpow") {
                 a.tbar_power = atoi(argv[i + 1]);
             } else if (opt == "--chairpow") {
                 a.chairlift_power = atoi(argv[i + 1]);
             } else if (opt == "--parking") {
-                args.parking_lot_capacity = atoi(argv[i + 1]);
+                a.parking_lot_capacity = atoi(argv[i + 1]);
             }
         }
     }
@@ -57,10 +54,6 @@ int main(int argc, char* argv[]) {
         (new BusGenerator())->Activate();
     }
 
-    for (int i = 0; i < args.people_per_day; i++) {
-        (new PedestrianGenerator())->Activate();
-    }
-
     Chairlift* chairlift = new Chairlift();
     Tbar* tbar = new Tbar();
 
@@ -74,7 +67,11 @@ int main(int argc, char* argv[]) {
     ParkingLot.Output();
     float average = (float)totalRuns / (float)totalSkiers;
     printf("Total number of skiers: %d\n", totalSkiers);
-    printf("Average runs per skier: %f\n", average);
     printf("Skier with most runs: %d\n", maxRuns);
+    printf("Average runs per skier: %f\n", average);
+    printf("Average waiting in queue per skier: %f hr\n", ((float)totalTimeInQueue / (float)totalSkiers) / (HR));
+    printf("Average going up lift per skier: %f hr\n", (float)totalTimeOnLift / (float)totalSkiers / (HR));
+    printf("Average going downhill per skier: %f hr\n", (float)totalSkiingTime / (float)totalSkiers / (HR));
+    printf("Ratio of skiing to waiting (>1 == skiing > waiting): %f\n", (float)totalSkiingTime / (float)totalTimeInQueue);
     return 0;
 }
