@@ -1,4 +1,5 @@
 #include <simlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include <iomanip>
@@ -33,6 +34,42 @@ using namespace std;
 
 #define LIFT_CHAIRLIFT 0
 #define LIFT_TBAR 1
+
+struct args_t {
+    int cars_per_day;
+    int buses_per_day;
+
+    int tbar_power;
+    int chairlift_power;
+};
+
+extern args_t args;
+
+args_t getArgs(int argc, char *argv[]) {
+    args_t a;
+
+    a.cars_per_day = 600;
+    a.buses_per_day = 10;
+    a.tbar_power = 70;
+    a.chairlift_power = 75;
+
+    if (argc >= 2) {
+        for (int i = 1; i < argc; i++) {
+            string opt = string(argv[i]);
+            if (opt == "--cars") {
+                a.cars_per_day = atoi(argv[i + 1]);
+            } else if (opt == "--buses") {
+                a.buses_per_day = atoi(argv[i + 1]);
+            } else if (opt == "--tbarpow") {
+                a.tbar_power = atoi(argv[i + 1]);
+            } else if (opt == "--chairpow") {
+                a.chairlift_power = atoi(argv[i + 1]);
+            }
+        }
+    }
+
+    return a;
+}
 
 Queue chairliftQueue;
 Queue tbarQueue;
@@ -153,15 +190,28 @@ class SkierGenerator : public Event {
 };
 
 class Tbar : public Process {
+    int getActualOccupancy() {
+        int res = Random() * 100;
+        if (res < 65) {
+            return 2;
+        } else if (res < 95) {
+            return 1;
+        } else {
+            return 0;
+        }
+    };
+
     void Behavior() {
     start:
+        int actual_per_hour = ((TBAR_MAX_CAPACITY_PER_HOUR/2)*args.tbar_power/100);
+        double actual_per_second = actual_per_hour / (HR);
+        int interval = 1 / actual_per_second;
         if (Time >= CLOSE) {
             goto stop;
         }
-
-        Wait(15 * SEC);  // ! TODO  jak rychle kotvy prijizdej
+        Wait(interval * SEC);  // Interval between opening of gates
         if (!tbarQueue.Empty()) {
-            int limit = (tbarQueue.Length() < 2) ? tbarQueue.Length() : 2;
+            int limit = (tbarQueue.Length() < 2) ? tbarQueue.Length() : this->getActualOccupancy();
             for (int i = 0; i < limit; i++) {
                 Skier *skier = (Skier *)tbarQueue.GetFirst();
                 skier->GoUpLift(TBAR_DURATION);
@@ -178,16 +228,36 @@ class Tbar : public Process {
 };
 
 class Chairlift : public Process {
+    int getActualOccupancy() {
+        int res = Random() * 100;
+        if (res < 20) {
+            return 6;
+        } else if (res < 45)
+            return 5;
+        else if (res < 75) {
+            return 4;
+        } else if (res < 88) {
+            return 3;
+        } else if (res < 95) {
+            return 2;
+        } else if (res < 98) {
+            return 1;
+        } else {
+            return 0;
+        }
+    };
+
     void Behavior() {
     start:
+        int actual_per_hour = ((CHAIRLIFT_MAX_CAPACITY_PER_HOUR/6)*args.chairlift_power/100);
+        double actual_per_second = actual_per_hour / (HR);
+        int interval = 1 / actual_per_second;
         if (Time >= CLOSE) {
             goto stop;
         }
-
-        Wait(10 * SEC);  // ! TODO  cas branky
-        int i;
+        Wait(interval * SEC);  // Interval between opening of gates
         if (!chairliftQueue.Empty()) {
-            int limit = (chairliftQueue.Length() < 6) ? chairliftQueue.Length() : 6;
+            int limit = (chairliftQueue.Length() < 6) ? chairliftQueue.Length() : this->getActualOccupancy();
             for (int i = 0; i < limit; i++) {
                 Skier *skier = (Skier *)chairliftQueue.GetFirst();
                 skier->GoUpLift(CHAIRLIFT_DURATION);
@@ -213,9 +283,9 @@ int carsCouldntPark = 0;
 
 class Car : public Process {
    public:
-    int numberOfPeople;
+    unsigned int numberOfPeople;
 
-    int getNumberOfPeople() {
+    unsigned int getNumberOfPeople() {
         int res = Normal(3, 1);
         if (res < 1) {
             return 1;
@@ -242,14 +312,14 @@ class Car : public Process {
         }
         Enter(ParkingLot);
         // Generate skiers
-        for (int i = 0; i < this->numberOfPeople; i++) {
+        for (unsigned int i = 0; i < this->numberOfPeople; i++) {
             (new SkierGenerator())->Activate();
         }
     wait:
         Wait(2 * HR);
         // Wait until skiers are done skiing
         if (readyToLeave.Length() >= this->numberOfPeople) {
-            for (int i = 0; i < this->numberOfPeople; i++) {
+            for (unsigned int i = 0; i < this->numberOfPeople; i++) {
                 Skier *skier = (Skier *)readyToLeave.GetFirst();
                 skier->Terminate();
             }
@@ -260,9 +330,44 @@ class Car : public Process {
     }
 };
 
+class Bus : public Process {
+   public:
+    unsigned int numberOfPeople;
+
+    unsigned int getNumberOfPeople() {
+        return Normal(40, 10);
+    }
+
+    void Behavior() {
+        Wait(Uniform(1, 8));  // Buses arrive between 7:00 and 14:00
+        this->numberOfPeople = getNumberOfPeople();
+        for (unsigned int i = 0; i < this->numberOfPeople; i++) {
+            (new SkierGenerator())->Activate();
+        }
+    wait:
+        Wait(2 * HR);
+        // Wait until skiers are done skiing
+        if (readyToLeave.Length() >= this->numberOfPeople) {
+            for (unsigned int i = 0; i < this->numberOfPeople; i++) {
+                Skier *skier = (Skier *)readyToLeave.GetFirst();
+                skier->Terminate();
+            }
+        } else {
+            goto wait;
+        }
+    }
+};
+
 class CarGenerator : public Event {
     void Behavior() {
         Car *car = new Car;
         car->Activate();
+    }
+};
+
+class BusGenerator : public Event {
+    void Behavior() {
+        Bus *bus = new Bus;
+        bus->Activate();
     }
 };
