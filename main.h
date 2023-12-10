@@ -131,8 +131,8 @@ class Skier : public Process {
                 }
             }
             int lift = SelectLift();  // Decide which lift
+            Wait(Normal(2*MIN, 15*SEC));// Get to the queue
             if (lift == LIFT_TBAR) {
-                // ! TODO time to queue
                 Into(tbarQueue);
             } else {
                 Into(chairliftQueue);
